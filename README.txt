@@ -1,7 +1,9 @@
-This is a simple Minizip wrapper of python : http://www.winimage.com/zLibDll/minizip.html
-
 To create a password encrypted zip file in python.
+AES encryption (http://en.wikipedia.org/wiki/Advanced_Encryption_Standard).
+And the zip file is able to extract in WINDOWS.
 
+This is a simple Minizip wrapper of python.
+(http://www.winimage.com/zLibDll/minizip.html)
 This software uses zlib.
 License: zlib/libpng License.
 
