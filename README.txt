@@ -15,7 +15,7 @@ install zlib
 
 install pyminizip
 
-    $ python ./setup.py install
+    $ pip install pyminizip
 
 ----------------------------------------------------------------------------
 

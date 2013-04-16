@@ -1,6 +1,7 @@
 build/
 dist/
 memo/
+MANIFEST
 */**/*.so
 */**/*.o
 */**/\#*
