@@ -75,6 +75,11 @@ typedef voidp unzFile;
 #define UNZ_INTERNALERROR               (-104)
 #define UNZ_CRCERROR                    (-105)
 
+/* if old version of zlib (older than 1.2.7) doesn't have z_crc_t */
+#ifndef Z_U4
+    typedef unsigned long z_crc_t;
+#endif
+
 /* tm_unz contain date/time info */
 typedef struct tm_unz_s
 {

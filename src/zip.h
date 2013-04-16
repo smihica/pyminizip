@@ -78,6 +78,11 @@ typedef voidp zipFile;
 #endif
 /* default memLevel */
 
+/* if old version of zlib (older than 1.2.7) doesn't have z_crc_t */
+#ifndef Z_U4
+    typedef unsigned long z_crc_t;
+#endif
+
 /* tm_zip contain date/time info */
 typedef struct tm_zip_s
 {
