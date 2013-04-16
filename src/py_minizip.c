@@ -359,7 +359,7 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
         return PyErr_Format(PyExc_ValueError, "compress dst file is None");
     }
 
-    if (level < 0 || 9 < level) {
+    if (level < 1 || 9 < level) {
         level = Z_DEFAULT_COMPRESSION;
     }
 
