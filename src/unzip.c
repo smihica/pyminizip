@@ -208,7 +208,7 @@ typedef struct
     int isZip64;                        /* is the current file zip64 */
 #ifndef NOUNCRYPT
     unsigned long keys[3];              /* keys defining the pseudo-random sequence */
-    const unsigned long* pcrc_32_tab;
+    const z_crc_t* pcrc_32_tab;
 #endif
 } unz64_s;
 
@@ -1306,7 +1306,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int* method, int* level, in
 #endif
         {
             int i;
-            s->pcrc_32_tab = (const unsigned long*)get_crc_table();
+            s->pcrc_32_tab = (const z_crc_t*)get_crc_table();
             init_keys(password, s->keys, s->pcrc_32_tab);
 
             if (ZREAD64(s->z_filefunc, s->filestream, source, 12)<12)
