@@ -28,7 +28,7 @@ pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(co
   1. src file path (string)
   2. dst file path (string)
   3. password (string) or None (to create no-password zip)
-  4. compress_level(int) between 0 to 9, 0 (more fast) <---> 9 (more compress) or -1 (default)
+  4. compress_level(int) between 1 to 9, 1 (more fast) <---> 9 (more compress) or 0 (default)
 
   Return value:
   - always returns None
