@@ -14,7 +14,7 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Development Status :: 3 - Alpha",
-        "Environment :: Other Environment"
+        "Environment :: Other Environment",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: zlib/libpng License",
         "Operating System :: OS Independent",
