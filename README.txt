@@ -19,7 +19,7 @@ install pyminizip
 
 ----------------------------------------------------------------------------
 
-Provides just one function.
+Provides two functions.
 ==============================
 
 pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(compress_level))
@@ -32,5 +32,16 @@ pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(co
 
   Return value:
   - always returns None
+
+pyminizip.compress_multiple([u'pyminizip.so'], "file.zip", "1233", 4)
+  Args:
+  1. src file LIST path (list)
+  2. dst file path (string)
+  3. password (string) or None (to create no-password zip)
+  4. compress_level(int) between 1 to 9, 1 (more fast)  <---> 9 (more compress)
+
+  Return value:
+  - always returns None
+
 
 ==============================

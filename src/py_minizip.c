@@ -376,10 +376,62 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
+{
+    int src_len, pass_len, level, res;
+    const char ** srcs;
+    const char * dst;
+    const char * pass;
+
+    PyObject *osrc, *odst, *opass, *olevel, *strObj; /* the list of strings */
+
+    int i;
+    int len;
+
+    if (!PyArg_UnpackTuple(args, "ref", 4, 4, &osrc, &odst, &opass, &olevel)) {
+        return PyErr_Format(PyExc_ValueError, "expected arguments are (src, dst, pass, level)");
+    }
+
+    src_len = PyList_Size(osrc);
+    dst = PyString_AsString(odst);
+
+    if (PyString_Check(opass)) {
+        pass = PyString_AsString(opass);
+    } else {
+        pass = NULL;
+    }
+
+    level = (int) PyInt_AsLong(olevel);
+
+    if (src_len < 1) {
+        return PyErr_Format(PyExc_ValueError, "no len for string");
+    }
+
+    if (level < 1 || 9 < level) {
+        level = Z_DEFAULT_COMPRESSION;
+    }
+
+    srcs = (char **)malloc(src_len * sizeof(char *));
+    for (i = 0; i < src_len; i++) {
+        strObj = PyList_GetItem(osrc, i);
+        srcs[i] = PyString_AsString(strObj);
+    }
+
+    res = _compress(srcs, src_len, dst, level, pass, 1);
+    
+
+    if (res != ZIP_OK) {
+        return NULL;
+    }
+
+    return Py_None;
+}
+
 static char ext_doc[] = "C extention for encrypted zip compress.\n";
 
 static PyMethodDef py_minizip_methods[] = {
 	{"compress", py_compress, METH_VARARGS, "make compressed file.\n"},
+	{"compress_multiple", py_compress_multiple, METH_VARARGS, "make compressed file with many files.\n"},
 	{NULL, NULL, 0, NULL}
 };
 
