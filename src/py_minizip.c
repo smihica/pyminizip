@@ -378,7 +378,7 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
 
 static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 {
-    int src_len, pass_len, level, res;
+    int src_len, level, res;
     const char ** srcs;
     const char * dst;
     const char * pass;
@@ -386,7 +386,6 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     PyObject *osrc, *odst, *opass, *olevel, *strObj; /* the list of strings */
 
     int i;
-    int len;
 
     if (!PyArg_UnpackTuple(args, "ref", 4, 4, &osrc, &odst, &opass, &olevel)) {
         return PyErr_Format(PyExc_ValueError, "expected arguments are (src, dst, pass, level)");
@@ -411,14 +410,16 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         level = Z_DEFAULT_COMPRESSION;
     }
 
-    srcs = (char **)malloc(src_len * sizeof(char *));
+    srcs = (const char **)malloc(src_len * sizeof(char *));
     for (i = 0; i < src_len; i++) {
         strObj = PyList_GetItem(osrc, i);
         srcs[i] = PyString_AsString(strObj);
     }
 
     res = _compress(srcs, src_len, dst, level, pass, 1);
-    
+
+    // cleanup free up heap allocated memory
+    free(srcs);
 
     if (res != ZIP_OK) {
         return NULL;
