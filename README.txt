@@ -1,8 +1,11 @@
 To create a password encrypted zip file in python.
 And the zip file is able to extract in WINDOWS.
 
-This is a simple Minizip wrapper of python.
+This is a simple Minizip wrapper of python, forked from https://github.com/smihica/pyminizip.
 (http://www.winimage.com/zLibDll/minizip.html)
+
+This fork adds a interface for compressing multiple files on the same encrypted zip.
+
 This software uses zlib.
 License: zlib/libpng License.
 
@@ -33,7 +36,7 @@ pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(co
   Return value:
   - always returns None
 
-pyminizip.compress_multiple([u'pyminizip.so'], "file.zip", "1233", 4)
+pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], "file.zip", "1233", 4)
   Args:
   1. src file LIST path (list)
   2. dst file path (string)
