@@ -1,6 +1,7 @@
 pyminizip:
 
-  Copyright (C) 2013 Shin Aoyama
+  Copyright (C) 2013 Shin Aoyama   -- compress()
+  Copyright (C) 2014 Jordi Sesmero -- compress_multiple()
 
   ------------------------------
 
