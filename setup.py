@@ -3,7 +3,7 @@ from distutils.core import setup, Extension
 
 setup(
     name = 'pyminizip',
-    version = '0.1.0',
+    version = '0.1.1',
     description = 'A minizip wrapper - To create a password encrypted zip file in python.',
     author='Shin Aoyama',
     author_email = "smihica@gmail.com",
