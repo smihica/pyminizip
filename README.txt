@@ -4,8 +4,6 @@ And the zip file is able to extract in WINDOWS.
 This is a simple Minizip wrapper of python.
 (http://www.winimage.com/zLibDll/minizip.html)
 
-This fork adds a interface for compressing multiple files on the same encrypted zip.
-
 This software uses zlib.
 License: zlib/libpng License.
 
