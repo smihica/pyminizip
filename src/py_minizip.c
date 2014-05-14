@@ -15,6 +15,7 @@
 */
 
 #include <Python.h>
+#include "bytesobject.h"
 
 #if (!defined(_WIN32)) && (!defined(WIN32)) && (!defined(__APPLE__))
     #ifndef __USE_FILE_OFFSET64
@@ -364,68 +365,84 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
     }
 
     if (pass_len < 1) {
-        res = _compress(&src, 1, dst, level, NULL, 1);
-    } else {
-        res = _compress(&src, 1, dst, level, pass, 1);
+        pass = NULL;
     }
+
+    res = _compress(&src, 1, dst, level, pass, 1);
 
     if (res != ZIP_OK) {
-        return NULL;
+        Py_RETURN_FALSE;
     }
 
-    return Py_None;
+    Py_RETURN_TRUE;
 }
 
 static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 {
-    int src_len, level, res;
-    const char ** srcs;
+    int i;
+    int src_len, dst_len, pass_len, level, res;
+    PyObject * src;
+    const char **srcs;
     const char * dst;
     const char * pass;
 
-    PyObject *osrc, *odst, *opass, *olevel, *strObj; /* the list of strings */
+    PyObject * str_obj; /* the list of strings */
+    char * tmp;
 
-    int i;
-
-    if (!PyArg_UnpackTuple(args, "ref", 4, 4, &osrc, &odst, &opass, &olevel)) {
-        return PyErr_Format(PyExc_ValueError, "expected arguments are (src, dst, pass, level)");
+    if (!PyArg_ParseTuple(args, "Oz#z#i", &src, &dst, &dst_len, &pass, &pass_len, &level)) {
+        return PyErr_Format(PyExc_ValueError, "expected arguments are compress([src], dst, pass, level)");
     }
 
-    src_len = PyList_Size(osrc);
-    dst = PyString_AsString(odst);
-
-    if (PyString_Check(opass)) {
-        pass = PyString_AsString(opass);
-    } else {
-        pass = NULL;
-    }
-
-    level = (int) PyInt_AsLong(olevel);
+    src_len = PyList_Size(src);
 
     if (src_len < 1) {
-        return PyErr_Format(PyExc_ValueError, "no len for string");
+        return PyErr_Format(PyExc_ValueError, "compress src file is None");
+    }
+
+    if (dst_len < 1) {
+        return PyErr_Format(PyExc_ValueError, "compress dst file is None");
     }
 
     if (level < 1 || 9 < level) {
         level = Z_DEFAULT_COMPRESSION;
     }
 
+    if (pass_len < 1) {
+        pass = NULL;
+    }
+
     srcs = (const char **)malloc(src_len * sizeof(char *));
+
+    if (srcs == NULL) {
+        return PyErr_NoMemory();
+    }
+
     for (i = 0; i < src_len; i++) {
-        strObj = PyList_GetItem(osrc, i);
-        srcs[i] = PyString_AsString(strObj);
+        str_obj = Py_BuildValue("(O)", PyList_GetItem(src, i));
+        if (args == NULL) {
+            return PyErr_Format(PyExc_ValueError, "could not convert src to char*");
+        }
+        if (!PyArg_ParseTuple(str_obj, "s", &tmp)) {
+            Py_XDECREF(str_obj);
+        };
+
+        srcs[i] = strdup(tmp);
+        Py_XDECREF(str_obj);
     }
 
     res = _compress(srcs, src_len, dst, level, pass, 1);
 
     // cleanup free up heap allocated memory
+    for (i = 0; i < src_len; i++) {
+        free(srcs[i]);
+    }
     free(srcs);
 
     if (res != ZIP_OK) {
-        return NULL;
+        Py_RETURN_FALSE;
     }
 
-    return Py_None;
+    Py_RETURN_TRUE;
 }
 
 static char ext_doc[] = "C extention for encrypted zip compress.\n";
@@ -436,6 +453,26 @@ static PyMethodDef py_minizip_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "pyminizip",
+        ext_doc,
+        -1,
+        py_minizip_methods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
+
+PyObject* PyInit_pyminizip(void) {
+    PyObject *module = PyModule_Create(&moduledef);
+    return module;
+}
+
+#else
 void initpyminizip(void) {
     Py_InitModule3("pyminizip", py_minizip_methods, ext_doc);
 }
+#endif
