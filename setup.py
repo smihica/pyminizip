@@ -27,6 +27,7 @@ setup(
                 'src/py_minizip.c',
                 'src/zip.c',
                 'src/ioapi.c',
+                'src/iowin32.c'
                 ],
                   include_dirs=['src'],
                   libraries=['zlib']
