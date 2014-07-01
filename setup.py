@@ -29,7 +29,7 @@ setup(
                 'src/ioapi.c',
                 ],
                   include_dirs=['src'],
-                  libraries=['zlibstat']
+                  libraries=['zlib']
                   )
         ],
     long_description = """\
