@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/ioapi.c']
 LIBRARIES = ['z']
