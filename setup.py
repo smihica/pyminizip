@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
+import sys
 from distutils.core import setup, Extension
+
+SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/ioapi.c']
+LIBRARIES = ['z']
+
+if 'win32' in sys.platform:
+    SOURCES.append('iowin32.c')
+    LIBRARIES = ['zlib']
 
 setup(
     name = 'pyminizip',
@@ -23,14 +31,9 @@ setup(
         ],
     ext_modules=[
         Extension(name="pyminizip",
-                  sources = [
-                'src/py_minizip.c',
-                'src/zip.c',
-                'src/ioapi.c',
-                'src/iowin32.c'
-                ],
+                  sources=SOURCES,
                   include_dirs=['src'],
-                  libraries=['zlib']
+                  libraries=LIBRARIES,
                   )
         ],
     long_description = """\
