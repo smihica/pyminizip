@@ -6,7 +6,7 @@ SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/ioapi.c']
 LIBRARIES = ['z']
 
 if 'win32' in sys.platform:
-    SOURCES.append('iowin32.c')
+    SOURCES.append('src/iowin32.c')
     LIBRARIES = ['zlib']
 
 setup(
