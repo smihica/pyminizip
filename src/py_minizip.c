@@ -55,6 +55,7 @@
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <setjmp.h>
 
 #ifdef _WIN32
 # include <direct.h>
@@ -75,6 +76,8 @@
 
 #define WRITEBUFFERSIZE (16384)
 #define MAXFILENAME     (256)
+
+PyObject* pyerr_msg;
 
 uLong filetime(const char *filename, tm_zip *tmzip, uLong *dostime)
 {
@@ -168,8 +171,11 @@ int get_file_crc(const char* filenameinzip, void *buf, unsigned long size_buf, u
     int err = ZIP_OK;
 
     fin = FOPEN_FUNC(filenameinzip,"rb");
-    if (fin == NULL)
+
+    if (fin == NULL) {
+        pyerr_msg = PyErr_Format(PyExc_IOError, "error in opening %s", filenameinzip);
         err = ZIP_ERRNO;
+    }
     else
     {
         do
@@ -178,7 +184,7 @@ int get_file_crc(const char* filenameinzip, void *buf, unsigned long size_buf, u
 
             if ((size_read < size_buf) && (feof(fin) == 0))
             {
-                PyErr_Format(PyExc_IOError, "error in reading %s", filenameinzip);
+                pyerr_msg = PyErr_Format(PyExc_IOError, "error in reading %s", filenameinzip);
                 err = ZIP_ERRNO;
             }
 
@@ -215,8 +221,8 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
     buf = (void*)malloc(size_buf);
     if (buf == NULL)
     {
-        PyErr_Format(PyExc_MemoryError, "could not allocate memory");
-        return ZIP_INTERNALERROR;
+        pyerr_msg = PyErr_Format(PyExc_MemoryError, "could not allocate memory");
+        return ZIP_ERRNO;
     }
 
 #ifdef USEWIN32IOAPI
@@ -228,7 +234,7 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
 
     if (zf == NULL)
     {
-        PyErr_Format(PyExc_IOError, "error opening %s", dst);
+        pyerr_msg = PyErr_Format(PyExc_IOError, "error opening %s", dst);
         err = ZIP_ERRNO;
     }
 
@@ -284,16 +290,17 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
                     -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
                     password, crcFile, zip64);
 
-        if (err != ZIP_OK)
-            PyErr_Format(PyExc_IOError, "error in opening %s in zipfile (%d)", filenameinzip, err);
-
+        if (err != ZIP_OK) {
+            pyerr_msg = PyErr_Format(PyExc_IOError, "error in opening %s in zipfile (%d)", filenameinzip, err);
+            err = ZIP_ERRNO;
+        }
         else
         {
             fin = FOPEN_FUNC(filenameinzip, "rb");
             if (fin == NULL)
             {
+                pyerr_msg = PyErr_Format(PyExc_IOError, "error in opening %s for reading", filenameinzip);
                 err = ZIP_ERRNO;
-                PyErr_Format(PyExc_IOError, "error in opening %s for reading", filenameinzip);
             }
         }
 
@@ -305,15 +312,17 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
                 size_read = (int)fread(buf, 1, size_buf, fin);
                 if ((size_read < size_buf) && (feof(fin) == 0))
                 {
-                    PyErr_Format(PyExc_IOError, "error in reading %s", filenameinzip);
+                    pyerr_msg = PyErr_Format(PyExc_IOError, "error in reading %s", filenameinzip);
                     err = ZIP_ERRNO;
                 }
 
                 if (0 < size_read)
                 {
                     err = zipWriteInFileInZip(zf, buf, size_read);
-                    if (err < 0)
-                        PyErr_Format(PyExc_IOError, "error in writing %s in the zipfile (%d)", filenameinzip, err);
+                    if (err < 0) {
+                        pyerr_msg = PyErr_Format(PyExc_IOError, "error in writing %s in the zipfile (%d)", filenameinzip, err);
+                        err = ZIP_ERRNO;
+                    }
                 }
             }
             while ((err == ZIP_OK) && (size_read > 0));
@@ -322,19 +331,21 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
         if (fin)
             fclose(fin);
 
-        if (err < 0)
-            err = ZIP_ERRNO;
-        else
+        if (err == ZIP_OK)
         {
             err = zipCloseFileInZip(zf);
-            if (err != ZIP_OK)
-                PyErr_Format(PyExc_IOError, "error in closing %s in the zipfile (%d)", filenameinzip, err);
+            if (err != ZIP_OK) {
+                pyerr_msg = PyErr_Format(PyExc_IOError, "error in closing %s in the zipfile (%d)", filenameinzip, err);
+                err = ZIP_ERRNO;
+            }
         }
     }
 
     errclose = zipClose(zf, NULL);
-    if (errclose != ZIP_OK)
-        PyErr_Format(PyExc_IOError, "error in closing %s (%d)", dst, errclose);
+    if (errclose != ZIP_OK) {
+        pyerr_msg = PyErr_Format(PyExc_IOError, "error in closing %s (%d)", dst, errclose);
+        err = ZIP_ERRNO;
+    }
 
     free(buf);
 
@@ -382,7 +393,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     int i;
     int src_len, dst_len, pass_len, level, res;
     PyObject * src;
-    const char **srcs;
+    char ** srcs;
     const char * dst;
     const char * pass;
 
@@ -411,7 +422,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         pass = NULL;
     }
 
-    srcs = (const char **)malloc(src_len * sizeof(char *));
+    srcs = (char **)malloc(src_len * sizeof(char *));
 
     if (srcs == NULL) {
         return PyErr_NoMemory();
@@ -430,7 +441,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         Py_XDECREF(str_obj);
     }
 
-    res = _compress(srcs, src_len, dst, level, pass, 1);
+    res = _compress((const char **)srcs, src_len, dst, level, pass, 1);
 
     // cleanup free up heap allocated memory
     for (i = 0; i < src_len; i++) {
@@ -439,10 +450,10 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     free(srcs);
 
     if (res != ZIP_OK) {
-        Py_RETURN_FALSE;
+        return pyerr_msg;
     }
 
-    Py_RETURN_TRUE;
+    Py_RETURN_NONE;
 }
 
 static char ext_doc[] = "C extention for encrypted zip compress.\n";
