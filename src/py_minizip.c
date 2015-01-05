@@ -381,10 +381,10 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
     res = _compress(&src, 1, dst, level, pass, 1);
 
     if (res != ZIP_OK) {
-        Py_RETURN_FALSE;
+        return pyerr_msg;
     }
 
-    Py_RETURN_TRUE;
+    Py_RETURN_NONE;
 }
 
 static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
