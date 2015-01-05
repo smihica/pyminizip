@@ -55,7 +55,6 @@
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <setjmp.h>
 
 #ifdef _WIN32
 # include <direct.h>
