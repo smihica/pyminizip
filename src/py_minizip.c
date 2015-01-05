@@ -76,7 +76,7 @@
 #define WRITEBUFFERSIZE (16384)
 #define MAXFILENAME     (256)
 
-PyObject* pyerr_msg;
+PyObject* pyerr_msg = NULL;
 
 uLong filetime(const char *filename, tm_zip *tmzip, uLong *dostime)
 {
