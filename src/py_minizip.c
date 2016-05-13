@@ -341,12 +341,14 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
 
         if (progress != NULL)
         {
-            PyObject *args = PyTuple_New(1);
-            PyObject *count = PyInt_FromLong(i+1);
-            PyTuple_SetItem(args, 0, count);
-            PyObject_CallObject(progress, args);
-            Py_DECREF(args);
-            Py_DECREF(count);
+			PyObject* args = Py_BuildValue("(I)", i + 1);
+			PyObject* result = PyObject_CallObject(progress, args);
+			if (PyErr_Occurred()) // Ignore errors in the callback, don't want them to crash this c module
+			{
+				PyErr_Clear();
+			}
+			Py_XDECREF(result);
+			Py_XDECREF(args);
         }
 
     }
