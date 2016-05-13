@@ -204,7 +204,7 @@ int get_file_crc(const char* filenameinzip, void *buf, unsigned long size_buf, u
     return err;
 }
 
-int _compress(const char** srcs, int src_num, const char* dst, int level, const char* password, int exclude_path)
+int _compress(const char** srcs, int src_num, const char* dst, int level, const char* password, int exclude_path, PyObject* progress)
 {
     zipFile zf = NULL;
     int size_buf = WRITEBUFFERSIZE;
@@ -338,6 +338,19 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
                 err = ZIP_ERRNO;
             }
         }
+
+        if (progress != NULL)
+        {
+			PyObject* args = Py_BuildValue("(I)", i + 1);
+			PyObject* result = PyObject_CallObject(progress, args);
+			if (PyErr_Occurred()) // Ignore errors in the callback, don't want them to crash this c module
+			{
+				PyErr_Clear();
+			}
+			Py_XDECREF(result);
+			Py_XDECREF(args);
+        }
+
     }
 
     errclose = zipClose(zf, NULL);
@@ -378,7 +391,7 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
         pass = NULL;
     }
 
-    res = _compress(&src, 1, dst, level, pass, 1);
+    res = _compress(&src, 1, dst, level, pass, 1, NULL);
 
     if (res != ZIP_OK) {
         return pyerr_msg;
@@ -399,8 +412,10 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     PyObject * str_obj; /* the list of strings */
     char * tmp;
 
-    if (!PyArg_ParseTuple(args, "Oz#z#i", &src, &dst, &dst_len, &pass, &pass_len, &level)) {
-        return PyErr_Format(PyExc_ValueError, "expected arguments are compress([src], dst, pass, level)");
+    PyObject * progress_cb_obj = NULL;
+
+    if (!PyArg_ParseTuple(args, "Oz#z#i|O", &src, &dst, &dst_len, &pass, &pass_len, &level, &progress_cb_obj)) {
+        return PyErr_Format(PyExc_ValueError, "expected arguments are compress([src], dst, pass, level, <progress>)");
     }
 
     src_len = PyList_Size(src);
@@ -419,6 +434,12 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 
     if (pass_len < 1) {
         pass = NULL;
+    }
+
+    if (progress_cb_obj != NULL) {
+        if (!PyFunction_Check(progress_cb_obj)) {
+            return PyErr_Format(PyExc_ValueError, "progress must be function or None");
+        }
     }
 
     srcs = (char **)malloc(src_len * sizeof(char *));
@@ -440,7 +461,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         Py_XDECREF(str_obj);
     }
 
-    res = _compress((const char **)srcs, src_len, dst, level, pass, 1);
+    res = _compress((const char **)srcs, src_len, dst, level, pass, 1, progress_cb_obj);
 
     // cleanup free up heap allocated memory
     for (i = 0; i < src_len; i++) {
