@@ -2,12 +2,13 @@
 import sys
 from setuptools import setup, Extension
 
-SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/ioapi.c']
-LIBRARIES = ['z']
+SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/ioapi.c',
+           'zlib123/adler32.c', 'zlib123/compress.c', 'zlib123/crc32.c', 'zlib123/deflate.c', 
+           'zlib123/gzio.c', 'zlib123/infback.c', 'zlib123/inffast.c', 'zlib123/inflate.c', 
+           'zlib123/inftrees.c', 'zlib123/trees.c', 'zlib123/uncompr.c', 'zlib123/zutil.c']
 
 if 'win32' in sys.platform:
     SOURCES.append('src/iowin32.c')
-    LIBRARIES = ['zlib']
 
 setup(
     name = 'pyminizip',
@@ -32,8 +33,7 @@ setup(
     ext_modules=[
         Extension(name="pyminizip",
                   sources=SOURCES,
-                  include_dirs=['src'],
-                  libraries=LIBRARIES,
+                  include_dirs=['src','zlib123'],
                   )
         ],
     long_description = """\
