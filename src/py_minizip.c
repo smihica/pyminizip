@@ -410,12 +410,11 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     const char * pass;
 
     PyObject * str_obj; /* the list of strings */
-    char * tmp;
 
     PyObject * progress_cb_obj = NULL;
 
-    if (!PyArg_ParseTuple(args, "Oz#z#i|O", &src, &dst, &dst_len, &pass, &pass_len, &level, &progress_cb_obj)) {
-        return PyErr_Format(PyExc_ValueError, "expected arguments are compress([src], dst, pass, level, <progress>)");
+    if (!PyArg_ParseTuple(args, "O!z#z#i|O", &PyList_Type, &src, &dst, &dst_len, &pass, &pass_len, &level, &progress_cb_obj)) {
+        return NULL;
     }
 
     src_len = PyList_Size(src);
@@ -442,6 +441,13 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         }
     }
 
+    for (i = 0; i < src_len; i++) {
+        str_obj = PyList_GetItem(src, i);
+        if (!PyString_Check(str_obj) && !PyUnicode_Check(str_obj)) {
+            return PyErr_Format(PyExc_ValueError, "[src] elements must be strings");
+        }
+    }
+
     srcs = (char **)malloc(src_len * sizeof(char *));
 
     if (srcs == NULL) {
@@ -449,24 +455,13 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     }
 
     for (i = 0; i < src_len; i++) {
-        str_obj = Py_BuildValue("(O)", PyList_GetItem(src, i));
-        if (args == NULL) {
-            return PyErr_Format(PyExc_ValueError, "could not convert src to char*");
-        }
-        if (!PyArg_ParseTuple(str_obj, "s", &tmp)) {
-            Py_XDECREF(str_obj);
-        };
-
-        srcs[i] = strdup(tmp);
-        Py_XDECREF(str_obj);
+        str_obj = PyList_GetItem(src, i);
+        srcs[i] = PyString_AsString(str_obj);
     }
 
     res = _compress((const char **)srcs, src_len, dst, level, pass, 1, progress_cb_obj);
 
     // cleanup free up heap allocated memory
-    for (i = 0; i < src_len; i++) {
-        free(srcs[i]);
-    }
     free(srcs);
 
     if (res != ZIP_OK) {
