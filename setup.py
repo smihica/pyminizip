@@ -2,7 +2,7 @@
 import sys
 from setuptools import setup, Extension
 
-SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/ioapi.c',
+SOURCES = ['src/py_minizip.c', 'src/zip.c', 'src/py_miniunz.c', 'src/unzip.c', 'src/ioapi.c',
            'zlib123/adler32.c', 'zlib123/compress.c', 'zlib123/crc32.c', 'zlib123/deflate.c', 
            'zlib123/gzio.c', 'zlib123/infback.c', 'zlib123/inffast.c', 'zlib123/inflate.c', 
            'zlib123/inftrees.c', 'zlib123/trees.c', 'zlib123/uncompr.c', 'zlib123/zutil.c']
@@ -21,7 +21,7 @@ setup(
     keywords = ["zip", "file", "compress", "password", "encryption"],
     classifiers = [
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 2",
         "Development Status :: 3 - Alpha",
         "Environment :: Other Environment",
         "Intended Audience :: Developers",
@@ -59,7 +59,7 @@ install pyminizip
 
 ----------------------------------------------------------------------------
 
-Provides two functions.
+Provides three functions.
 ==============================
 
 pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(compress_level))
@@ -79,6 +79,12 @@ pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], "file.zip", "1233", 
   2. dst file path (string)
   3. password (string) or None (to create no-password zip)
   4. compress_level(int) between 1 to 9, 1 (more fast)  <---> 9 (more compress)
+
+pyminizip.uncompress("/srcfile/path.zip", "password", "/dirtoextract", int(withoutpath))
+  1. src file path (string)
+  2. password (string) or None (to unzip encrypted archives)
+  3. dir path to extract files
+  4. withoutpath (exclude path of extracted)
 
   Return value:
   - always returns None
