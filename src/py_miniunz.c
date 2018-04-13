@@ -197,7 +197,7 @@ int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_o
     if (err != UNZ_OK)
     {
         //printf("error %d with zipfile in unzGetCurrentFileInfo\n",err);
-        pyerr_msg_unz = PyErr_Format(PyExc_StandardError, "error %d with zipfile in unzGetCurrentFileInfo", err);
+        pyerr_msg_unz = PyErr_Format(PyExc_Exception, "error %d with zipfile in unzGetCurrentFileInfo", err);
         return err;
     }
 
@@ -231,35 +231,13 @@ int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_o
     err = unzOpenCurrentFilePassword(uf, password);
     if (err != UNZ_OK)
         //printf("error %d with zipfile in unzOpenCurrentFilePassword\n", err);
-        pyerr_msg_unz = PyErr_Format(PyExc_StandardError,
+        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
                             "error %d with zipfile in unzOpenCurrentFilePassword", err);
 
     if (opt_extract_without_path)
         write_filename = filename_withoutpath;
     else
         write_filename = filename_inzip;
-
-    // /* Determine if the file should be overwritten or not and ask the user if needed */
-    // if ((err == UNZ_OK) && (*popt_overwrite == 0) && (check_file_exists(write_filename)))
-    // {
-    //     char rep = 0;
-    //     do
-    //     {
-    //         char answer[128];
-    //         //printf("The file %s exists. Overwrite ? [y]es, [n]o, [A]ll: ", write_filename);
-    //         if (scanf("%1s", answer) != 1)
-    //             exit(EXIT_FAILURE);
-    //         rep = answer[0];
-    //         if ((rep >= 'a') && (rep <= 'z'))
-    //             rep -= 0x20;
-    //     }
-    //     while ((rep != 'Y') && (rep != 'N') && (rep != 'A'));
-
-    //     if (rep == 'N')
-    //         skip = 1;
-    //     if (rep == 'A')
-    //         *popt_overwrite = 1;
-    // }
 
     /* Create the file on disk so we can unzip to it */
     if ((skip == 0) && (err == UNZ_OK))
@@ -291,7 +269,7 @@ int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_o
             if (err < 0)
             {
                 //printf("error %d with zipfile in unzReadCurrentFile\n", err);
-                pyerr_msg_unz = PyErr_Format(PyExc_StandardError, 
+                pyerr_msg_unz = PyErr_Format(PyExc_Exception, 
                                     "error %d with zipfile in unzReadCurrentFile", err);
                 break;
             }
@@ -317,7 +295,7 @@ int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_o
 
     errclose = unzCloseCurrentFile(uf);
     if (errclose != UNZ_OK)
-        pyerr_msg_unz = PyErr_Format(PyExc_StandardError,
+        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
                             "error %d with zipfile in unzCloseCurrentFile", errclose);
         //printf("error %d with zipfile in unzCloseCurrentFile\n", errclose);
 
@@ -331,7 +309,7 @@ int do_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, 
     if (err != UNZ_OK)
     {
         //printf("error %d with zipfile in unzGoToFirstFile\n", err);
-        pyerr_msg_unz = PyErr_Format(PyExc_StandardError,
+        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
                             "error %d with zipfile in unzGoToFirstFile", err);
         return 1;
     }
@@ -348,7 +326,7 @@ int do_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, 
     if (err != UNZ_END_OF_LIST_OF_FILE)
     {
         //printf("error %d with zipfile in unzGoToNextFile\n", err);
-        pyerr_msg_unz = PyErr_Format(PyExc_StandardError,
+        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
                             "error %d with zipfile in unzGoToNextFile", err);
         return 1;
     }
@@ -391,10 +369,6 @@ int _uncompress(const char* src, const char* password, const char *dirname,
     unzFile uf = NULL;
 #ifdef USEWIN32IOAPI
     zlib_filefunc64_def ffunc = {0};
-#endif
-
-#ifdef USEWIN32IOAPI
-    zlib_filefunc64_def ffunc;
     fill_win32_filefunc64A(&ffunc);
     uf = unzOpen2_64(src, &ffunc);
 #else
@@ -426,7 +400,7 @@ int _uncompress(const char* src, const char* password, const char *dirname,
     }
 
     // if (ret != UNZ_OK)
-    //     pyerr_msg_unz = PyErr_Format(PyExc_StandardError, "generic error");
+    //     pyerr_msg_unz = PyErr_Format(PyExc_Exception, "generic error");
 
     unzClose(uf);
     return ret;
