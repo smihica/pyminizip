@@ -250,8 +250,8 @@ int _compress(const char** srcs, int src_num, const char** srcspath, int srcpath
         const char* filenameinzip = srcs[i];
         const char* filepathnameinzip;
         const char *savefilenameinzip;
-        const char *savefilepathnameinzip;
-        char *fullpathfileinzip;
+        const char *savefilepathnameinzip = NULL;
+        char *fullpathfileinzip = NULL;
         unsigned long crcFile = 0;
         int zip64 = 0;
 
@@ -401,19 +401,18 @@ int _compress(const char** srcs, int src_num, const char** srcspath, int srcpath
 
         if (progress != NULL)
         {
-			PyObject* args = Py_BuildValue("(I)", i + 1);
-			PyObject* result = PyObject_CallObject(progress, args);
-			if (PyErr_Occurred()) // Ignore errors in the callback, don't want them to crash this c module
-			{
-				PyErr_Clear();
-			}
-			Py_XDECREF(result);
-			Py_XDECREF(args);
+	    PyObject* args = Py_BuildValue("(I)", i + 1);
+	    PyObject* result = PyObject_CallObject(progress, args);
+	    if (PyErr_Occurred()) // Ignore errors in the callback, don't want them to crash this c module
+	    {
+                PyErr_Clear();
+	    }
+	    Py_XDECREF(result);
+	    Py_XDECREF(args);
         }
 
-
-        if(srcpath_num > 0)
-                free(fullpathfileinzip);
+        if(srcpath_num > 0 && fullpathfileinzip)
+            free(fullpathfileinzip);
     }
 
     errclose = zipClose(zf, NULL);
@@ -478,7 +477,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     int i;
     int src_len, srcpath_len, dst_len, pass_len, level, res;
     PyObject * src, * srcpath;
-    char ** srcs, ** srcspath;
+    char ** srcs, ** srcspath = NULL;
     const char * dst;
     const char * pass;
 
