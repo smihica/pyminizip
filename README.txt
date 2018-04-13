@@ -27,20 +27,22 @@ pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(co
 
   Args:
   1. src file path (string)
-  2. dst file path (string)
-  3. password (string) or None (to create no-password zip)
-  4. compress_level(int) between 1 to 9, 1 (more fast) <---> 9 (more compress) or 0 (default)
+  2. src file prefix path (string) or None (path to prepend to file)
+  3. dst file path (string)
+  4. password (string) or None (to create no-password zip)
+  5. compress_level(int) between 1 to 9, 1 (more fast) <---> 9 (more compress) or 0 (default)
 
   Return value:
   - always returns None
 
-pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], "file.zip", "1233", 4, progress)
+pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], [u'/path_for_file1', u'/path_for_file2'], "file.zip", "1233", 4, progress)
   Args:
   1. src file LIST path (list)
-  2. dst file path (string)
-  3. password (string) or None (to create no-password zip)
-  4. compress_level(int) between 1 to 9, 1 (more fast)  <---> 9 (more compress)
-  5. optional function to be called during processing which takes one argument, the count of how many files have been compressed
+  2. src file LIST prefix path (list) or []
+  3. dst file path (string)
+  4. password (string) or None (to create no-password zip)
+  5. compress_level(int) between 1 to 9, 1 (more fast)  <---> 9 (more compress)
+  6. optional function to be called during processing which takes one argument, the count of how many files have been compressed
 
 pyminizip.uncompress("/srcfile/path.zip", "password", "/dirtoextract", int(withoutpath))
   1. src file path (string)

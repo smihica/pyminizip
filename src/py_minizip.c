@@ -206,7 +206,8 @@ int get_file_crc(const char* filenameinzip, void *buf, unsigned long size_buf, u
     return err;
 }
 
-int _compress(const char** srcs, int src_num, const char* dst, int level, const char* password, int exclude_path, PyObject* progress)
+int _compress(const char** srcs, int src_num, const char** srcspath, int srcpath_num,
+	      const char* dst, int level, const char* password, int exclude_path, PyObject* progress)
 {
     zipFile zf = NULL;
     int size_buf = WRITEBUFFERSIZE;
@@ -226,6 +227,9 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
         return ZIP_ERRNO;
     }
 
+    if (srcpath_num > 0)
+        assert(src_num == srcpath_num);
+
 #ifdef USEWIN32IOAPI
     fill_win32_filefunc64A(&ffunc);
     zf = zipOpen2_64(dst, opt_overwrite, NULL, &ffunc);
@@ -244,9 +248,15 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
         FILE *fin = NULL;
         int size_read = 0;
         const char* filenameinzip = srcs[i];
+        const char* filepathnameinzip;
         const char *savefilenameinzip;
+        const char *savefilepathnameinzip;
+        char *fullpathfileinzip;
         unsigned long crcFile = 0;
         int zip64 = 0;
+
+        if (srcpath_num > 0)
+            filepathnameinzip = srcspath[i];
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zip_fileinfo));
@@ -267,6 +277,12 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
         while (savefilenameinzip[0] == '\\' || savefilenameinzip[0] == '/')
             savefilenameinzip++;
 
+        if (srcpath_num > 0) {
+            savefilepathnameinzip = filepathnameinzip;
+            while (savefilepathnameinzip[0] == '\\' || savefilepathnameinzip[0] == '/')
+                savefilepathnameinzip++;
+        }
+
         /* Should the file be stored with any path info at all? */
         if (exclude_path)
         {
@@ -281,6 +297,48 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
 
             if (lastslash != NULL)
                 savefilenameinzip = lastslash + 1; // base filename follows last slash.
+
+            if (srcpath_num > 0) {
+                /* prepend savefilepathnameinzip for each savefilenameinzip */
+                const char * slash;
+#if (defined(_WIN32))
+                const char default_slash = '\\';
+#else
+                const char default_slash = '/';
+#endif
+                size_t extra_len = 0;
+                size_t filename_len = strlen(savefilenameinzip);
+                size_t filepathname_len = strlen(savefilepathnameinzip);
+
+                /* look for slash used in filepath */
+                slash = strchr(savefilepathnameinzip, '/');
+                if (slash == NULL) {
+                    slash = strchr(savefilepathnameinzip, '\\');
+                    if (slash == NULL) {
+                        // no slash found.. use default
+                        slash = &default_slash;
+                    }
+                }
+                if (savefilepathnameinzip[filepathname_len-1] != *slash)
+                    extra_len = 1;
+                /* allocate buffer */
+                fullpathfileinzip = (char *)malloc(filename_len + filepathname_len + extra_len + 1);
+                if (fullpathfileinzip == NULL) {
+                    free(buf);
+                    pyerr_msg = PyErr_Format(PyExc_MemoryError, "error allocating memory on minizip compress");
+                    return ZIP_INTERNALERROR;
+                }
+
+                strncpy(fullpathfileinzip, savefilepathnameinzip, filepathname_len);
+                if (extra_len)
+                    fullpathfileinzip[filepathname_len] = *slash;
+                strncpy(fullpathfileinzip + filepathname_len + extra_len, savefilenameinzip, filename_len);
+                /* terminate string */
+                fullpathfileinzip[filename_len + filepathname_len + extra_len] = '\0';
+
+                /* set pointer */
+                savefilenameinzip = fullpathfileinzip;
+            }
         }
 
         /* Add to zip file */
@@ -353,6 +411,9 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
 			Py_XDECREF(args);
         }
 
+
+        if(srcpath_num > 0)
+                free(fullpathfileinzip);
     }
 
     errclose = zipClose(zf, NULL);
@@ -368,17 +429,27 @@ int _compress(const char** srcs, int src_num, const char* dst, int level, const 
 
 static PyObject *py_compress(PyObject *self, PyObject *args)
 {
-    int src_len, dst_len, pass_len, level, res;
+    int src_len, srcpath_len, dst_len, pass_len, level, res;
     const char * src;
+    const char * srcpath;
     const char * dst;
     const char * pass;
 
-    if (!PyArg_ParseTuple(args, "z#z#z#i", &src, &src_len, &dst, &dst_len, &pass, &pass_len, &level)) {
-        return PyErr_Format(PyExc_ValueError, "expected arguments are compress(src, dst, pass, level)");
+    if (!PyArg_ParseTuple(args, "z#z#z#z#i",
+                                &src, &src_len,
+                                &srcpath, &srcpath_len,
+                                &dst, &dst_len,
+                                &pass, &pass_len,
+                                &level)) {
+        return PyErr_Format(PyExc_ValueError, "expected arguments are compress(src, srcpath, dst, pass, level)");
     }
 
     if (src_len < 1) {
         return PyErr_Format(PyExc_ValueError, "compress src file is None");
+    }
+
+    if (srcpath_len > 0) {
+        srcpath_len = 1;
     }
 
     if (dst_len < 1) {
@@ -393,7 +464,7 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
         pass = NULL;
     }
 
-    res = _compress(&src, 1, dst, level, pass, 1, NULL);
+    res = _compress(&src, 1, &srcpath, srcpath_len, dst, level, pass, 1, NULL);
 
     if (res != ZIP_OK) {
         return pyerr_msg;
@@ -405,24 +476,41 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
 static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 {
     int i;
-    int src_len, dst_len, pass_len, level, res;
-    PyObject * src;
-    char ** srcs;
+    int src_len, srcpath_len, dst_len, pass_len, level, res;
+    PyObject * src, * srcpath;
+    char ** srcs, ** srcspath;
     const char * dst;
     const char * pass;
 
     PyObject * str_obj; /* the list of strings */
+    PyObject * strpath_obj; /* the list of path strings */
 
     PyObject * progress_cb_obj = NULL;
 
-    if (!PyArg_ParseTuple(args, "O!z#z#i|O", &PyList_Type, &src, &dst, &dst_len, &pass, &pass_len, &level, &progress_cb_obj)) {
-        return NULL;
+    if (!PyArg_ParseTuple(args, "O!O!z#z#i|O",
+			  &PyList_Type, &src,
+			  &PyList_Type, &srcpath,
+			  &dst, &dst_len,
+			  &pass, &pass_len,
+			  &level,
+			  &progress_cb_obj)) {
+        return PyErr_Format(PyExc_ValueError,
+                        "expected arguments are "
+                        "compress_multiple([src], [srcpath], dst, pass, level)");
     }
 
     src_len = PyList_Size(src);
 
     if (src_len < 1) {
         return PyErr_Format(PyExc_ValueError, "compress src file is None");
+    }
+
+    srcpath_len = PyList_Size(srcpath);
+    if (srcpath_len < 1) {
+        srcpath = NULL;
+    } else if (srcpath_len != src_len) {
+        return PyErr_Format(PyExc_ValueError, "compress src file list has different length "
+                                              "than src file path list");
     }
 
     if (dst_len < 1) {
@@ -461,10 +549,34 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         srcs[i] = PyString_AsString(str_obj);
     }
 
-    res = _compress((const char **)srcs, src_len, dst, level, pass, 1, progress_cb_obj);
+    if (srcpath) {
+        for (i = 0; i < srcpath_len; i++) {
+                strpath_obj = PyList_GetItem(srcpath, i);
+                if (!PyString_Check(strpath_obj) && !PyUnicode_Check(strpath_obj)) {
+                        return PyErr_Format(PyExc_ValueError, "[srcpath] elements must be strings");
+                }
+        }
+
+        srcspath = (char **)malloc(srcpath_len * sizeof(char *));
+        if (srcspath == NULL) {
+                return PyErr_NoMemory();
+        }
+
+        for (i = 0; i < srcpath_len; i++) {
+                strpath_obj = PyList_GetItem(srcpath, i);
+                srcspath[i] = PyString_AsString(strpath_obj);
+        }
+    }
+
+    res = _compress((const char **)srcs, src_len,
+		    (const char **)srcspath, srcpath_len,
+		    dst, level, pass, 1, progress_cb_obj);
 
     // cleanup free up heap allocated memory
     free(srcs);
+
+    if (srcpath)
+        free(srcspath);
 
     if (res != ZIP_OK) {
         return pyerr_msg;
