@@ -255,11 +255,11 @@ int _compress(const char** srcs, int src_num, const char** srcspath, int srcpath
         unsigned long crcFile = 0;
         int zip64 = 0;
 
-        if (srcpath_num > 0)
-            filepathnameinzip = srcspath[i];
-
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zip_fileinfo));
+
+        if (srcpath_num > 0)
+            filepathnameinzip = srcspath[i];
 
         /* Get information about the file on disk so we can store it in zip */
         filetime(filenameinzip, &zi.tmz_date, &zi.dosDate);
