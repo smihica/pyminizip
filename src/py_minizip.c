@@ -574,7 +574,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     // cleanup free up heap allocated memory
     free(srcs);
 
-    if (srcpath)
+    if (srcspath)
         free(srcspath);
 
     if (res != ZIP_OK) {
