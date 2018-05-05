@@ -78,6 +78,8 @@
 
 PyObject* pyerr_msg = NULL;
 
+extern PyObject *py_uncompress(PyObject *self, PyObject *args);
+
 uLong filetime(const char *filename, tm_zip *tmzip, uLong *dostime)
 {
     int ret = 0;
@@ -471,11 +473,12 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static char ext_doc[] = "C extention for encrypted zip compress.\n";
+static char ext_doc[] = "C extention for encrypted zip compress/uncompress.\n";
 
 static PyMethodDef py_minizip_methods[] = {
 	{"compress", py_compress, METH_VARARGS, "make compressed file.\n"},
 	{"compress_multiple", py_compress_multiple, METH_VARARGS, "make compressed file with many files.\n"},
+	{"uncompress", py_uncompress, METH_VARARGS, "extract compressed file.\n"},
 	{NULL, NULL, 0, NULL}
 };
 

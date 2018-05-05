@@ -20,7 +20,7 @@ install pyminizip
 
 ----------------------------------------------------------------------------
 
-Provides two functions.
+Provides three functions.
 ==============================
 
 pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(compress_level))
@@ -41,6 +41,12 @@ pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], "file.zip", "1233", 
   3. password (string) or None (to create no-password zip)
   4. compress_level(int) between 1 to 9, 1 (more fast)  <---> 9 (more compress)
   5. optional function to be called during processing which takes one argument, the count of how many files have been compressed
+
+pyminizip.uncompress("/srcfile/path.zip", "password", "/dirtoextract", int(withoutpath))
+  1. src file path (string)
+  2. password (string) or None (to unzip encrypted archives)
+  3. dir path to extract files or None (to extract in a specific dir or cwd)
+  4. withoutpath (exclude path of extracted)
 
   Return value:
   - always returns None
