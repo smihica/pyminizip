@@ -23,7 +23,7 @@ install pyminizip
 Provides three functions.
 ==============================
 
-pyminizip.compress("/srcfile/path.txt", "/distfile/path.zip", "password", int(compress_level))
+pyminizip.compress("/srcfile/path.txt", "file_path_prefix", "/distfile/path.zip", "password", int(compress_level))
 
   Args:
   1. src file path (string)
