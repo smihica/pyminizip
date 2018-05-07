@@ -345,14 +345,16 @@ int do_extract_onefile(unzFile uf, const char* filename, int opt_extract_without
     return 1;
 }
 
-// printf("Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
-//         "  -e  Extract without pathname (junk paths)\n" \
-//         "  -x  Extract with pathname\n" \
-//         "  -v  list files\n" \
-//         "  -l  list files\n" \
-//         "  -d  directory to extract into\n" \
-//         "  -o  overwrite files without prompting\n" \
-//         "  -p  extract crypted file using password\n\n");
+/* original usage string for miniunz is:
+   "Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
+         "  -e  Extract without pathname (junk paths)\n" \
+         "  -x  Extract with pathname\n" \
+         "  -v  list files\n" \
+         "  -l  list files\n" \
+         "  -d  directory to extract into\n" \
+         "  -o  overwrite files without prompting\n" \
+         "  -p  extract crypted file using password\n\n");
+*/
 int _uncompress(const char* src, const char* password, const char *dirname,
                 int extract_withoutpath, PyObject* progress)
 {
