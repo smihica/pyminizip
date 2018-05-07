@@ -533,10 +533,11 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     for (i = 0; i < src_len; i++) {
         str_obj = PyList_GetItem(src, i);
 #if PY_MAJOR_VERSION >= 3
-        if (!PyUnicode_Check(str_obj)) {
+        if (!PyUnicode_Check(str_obj))
 #else
-        if (!PyString_Check(str_obj) && !PyUnicode_Check(str_obj)) {
+        if (!PyString_Check(str_obj) && !PyUnicode_Check(str_obj))
 #endif
+        {
             return PyErr_Format(PyExc_ValueError, "[src] elements must be strings");
         }
     }
@@ -560,11 +561,11 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
         for (i = 0; i < srcpath_len; i++) {
                 strpath_obj = PyList_GetItem(srcpath, i);
 #if PY_MAJOR_VERSION >= 3
-                if (!PyUnicode_Check(strpath_obj)) {
+                if (!PyUnicode_Check(strpath_obj))
 #else
-                if (!PyString_Check(strpath_obj) && !PyUnicode_Check(strpath_obj)) {
+                if (!PyString_Check(strpath_obj) && !PyUnicode_Check(strpath_obj))
 #endif
-
+                {
                         return PyErr_Format(PyExc_ValueError, "[srcpath] elements must be strings");
                 }
         }
