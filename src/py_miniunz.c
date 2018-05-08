@@ -187,7 +187,6 @@ int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_o
     int err = UNZ_OK;
     int errclose = UNZ_OK;
     int skip = 0;
-    uLong ratio = 0;
     char filename_inzip[256] = {0};
     char* filename_withoutpath = NULL;
     const char* write_filename = NULL;
@@ -336,32 +335,31 @@ int do_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, 
 int do_extract_onefile(unzFile uf, const char* filename, int opt_extract_without_path, int opt_overwrite, 
     const char* password)
 {
-    int err = UNZ_OK;
     if (unzLocateFile(uf, filename, NULL) != UNZ_OK)
     {
         //printf("file %s not found in the zipfile\n", filename);
         return 2;
     }
     if (do_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password) == UNZ_OK)
-        return 0;
+        return UNZ_OK;
     return 1;
 }
 
-// printf("Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
-//         "  -e  Extract without pathname (junk paths)\n" \
-//         "  -x  Extract with pathname\n" \
-//         "  -v  list files\n" \
-//         "  -l  list files\n" \
-//         "  -d  directory to extract into\n" \
-//         "  -o  overwrite files without prompting\n" \
-//         "  -p  extract crypted file using password\n\n");
+/* original usage string for miniunz is:
+   "Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
+         "  -e  Extract without pathname (junk paths)\n" \
+         "  -x  Extract with pathname\n" \
+         "  -v  list files\n" \
+         "  -l  list files\n" \
+         "  -d  directory to extract into\n" \
+         "  -o  overwrite files without prompting\n" \
+         "  -p  extract crypted file using password\n\n");
+*/
 int _uncompress(const char* src, const char* password, const char *dirname,
                 int extract_withoutpath, PyObject* progress)
 {
     const char *filename_to_extract = NULL;
-    int i = 0;
     int ret = 0;
-    int err = UNZ_OK;
     int extract = 1;  // extract always
     int overwrite = 1;  // overwrite always
     int extractdir = 0;
