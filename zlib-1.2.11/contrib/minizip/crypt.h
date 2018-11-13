@@ -29,6 +29,11 @@
 
 #define CRC32(c, b) ((*(pcrc_32_tab+(((int)(c) ^ (b)) & 0xff))) ^ ((c) >> 8))
 
+/* When building pyminizip module Python.h
+   includes crypt.h but it doesn't know z_crc_t type.
+   We need to include zconf.h to fix z_crc_t type error */
+#include <zconf.h>
+
 /***********************************************************************
  * Return the next byte in the pseudo-random sequence
  */
