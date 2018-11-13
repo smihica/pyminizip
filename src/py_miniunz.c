@@ -75,6 +75,7 @@
 
 #include "unzip.h"
 
+#define CASESENSITIVITY (0)
 #define WRITEBUFFERSIZE (8192)
 #define MAXFILENAME     (256)
 
@@ -136,7 +137,6 @@ int makedir(const char *newdir)
     buffer = (char*)malloc(len+1);
     if (buffer == NULL)
     {
-        //printf("Error allocating memory\n");
         pyerr_msg_unz = PyErr_Format(PyExc_MemoryError, "error allocating memory");
         return UNZ_INTERNALERROR;
     }
@@ -163,7 +163,6 @@ int makedir(const char *newdir)
 
         if ((MKDIR(buffer) == -1) && (errno == ENOENT))
         {
-            //printf("couldn't create directory %s (%d)\n", buffer, errno);
             free(buffer);
             return 0;
         }
@@ -178,125 +177,125 @@ int makedir(const char *newdir)
     return 1;
 }
 
-int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_overwrite, const char *password)
+int do_extract_currentfile(unzFile uf, const int* popt_extract_without_path, int* popt_overwrite, const char *password)
 {
-    unz_file_info64 file_info = {0};
-    FILE* fout = NULL;
-    void* buf = NULL;
-    uInt size_buf = WRITEBUFFERSIZE;
+    char filename_inzip[256];
+    char* filename_withoutpath;
+    char* p;
     int err = UNZ_OK;
-    int errclose = UNZ_OK;
-    int skip = 0;
-    char filename_inzip[256] = {0};
-    char* filename_withoutpath = NULL;
+    FILE *fout = NULL;
+    void* buf;
+    uInt size_buf;
+    unz_file_info64 file_info;
+
     const char* write_filename = NULL;
-    char* p = NULL;
+    int skip = 0;
 
     err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
     if (err != UNZ_OK)
     {
-        //printf("error %d with zipfile in unzGetCurrentFileInfo\n",err);
         pyerr_msg_unz = PyErr_Format(PyExc_Exception, "error %d with zipfile in unzGetCurrentFileInfo", err);
         return err;
     }
 
-    p = filename_withoutpath = filename_inzip;
-    while (*p != 0)
+    size_buf = WRITEBUFFERSIZE;
+    buf = (void*)malloc(size_buf);
+    if (buf == NULL)
     {
-        if ((*p == '/') || (*p == '\\'))
+        pyerr_msg_unz = PyErr_Format(PyExc_MemoryError, "error allocating memory");
+        return UNZ_INTERNALERROR;
+    }
+
+    p = filename_withoutpath = filename_inzip;
+    while ((*p) != '\0')
+    {
+        if (((*p)=='/') || ((*p)=='\\'))
             filename_withoutpath = p+1;
         p++;
     }
 
     /* If zip entry is a directory then create it on disk */
-    if (*filename_withoutpath == 0)
+    if ((*filename_withoutpath)=='\0')
     {
-        if (opt_extract_without_path == 0)
+        if ((*popt_extract_without_path)==0)
         {
-            //printf("creating directory: %s\n", filename_inzip);
             MKDIR(filename_inzip);
         }
-        return err;
     }
-
-    buf = (void*)malloc(size_buf);
-    if (buf == NULL)
-    {
-        //printf("Error allocating memory\n");
-        pyerr_msg_unz = PyErr_Format(PyExc_MemoryError, "error allocating memory");
-        return UNZ_INTERNALERROR;
-    }
-
-    err = unzOpenCurrentFilePassword(uf, password);
-    if (err != UNZ_OK)
-        //printf("error %d with zipfile in unzOpenCurrentFilePassword\n", err);
-        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
-                            "error %d with zipfile in unzOpenCurrentFilePassword", err);
-
-    if (opt_extract_without_path)
-        write_filename = filename_withoutpath;
     else
-        write_filename = filename_inzip;
-
-    /* Create the file on disk so we can unzip to it */
-    if ((skip == 0) && (err == UNZ_OK))
     {
-        fout = FOPEN_FUNC(write_filename, "wb");
-        /* Some zips don't contain directory alone before file */
-        if ((fout == NULL) && (opt_extract_without_path == 0) &&
-            (filename_withoutpath != (char*)filename_inzip))
+        if ((*popt_extract_without_path)==0)
+            write_filename = filename_inzip;
+        else
+            write_filename = filename_withoutpath;
+
+        err = unzOpenCurrentFilePassword(uf, password);
+        if (err != UNZ_OK) {
+            pyerr_msg_unz = PyErr_Format(PyExc_Exception,
+                                "error %d with zipfile in unzOpenCurrentFilePassword", err);
+        }
+
+
+        /* Create the file on disk so we can unzip to it */
+        if ((skip == 0) && (err == UNZ_OK))
         {
-            char c = *(filename_withoutpath-1);
-            *(filename_withoutpath-1) = 0;
-            makedir(write_filename);
-            *(filename_withoutpath-1) = c;
             fout = FOPEN_FUNC(write_filename, "wb");
+            /* Some zips don't contain directory alone before file */
+            if ((fout==NULL) && ((*popt_extract_without_path)==0) &&
+                                (filename_withoutpath!=(char*)filename_inzip))
+            {
+                char c = *(filename_withoutpath-1);
+                *(filename_withoutpath-1) = 0;
+                makedir(write_filename);
+                *(filename_withoutpath-1) = c;
+                fout = FOPEN_FUNC(write_filename, "wb");
+            }
+            if (fout == NULL) {
+                pyerr_msg_unz = PyErr_Format(PyExc_IOError, "error opening %s", write_filename);
+            }
         }
-        if (fout == NULL)
-            //printf("error opening %s\n", write_filename);
-            pyerr_msg_unz = PyErr_Format(PyExc_IOError, "error opening %s", write_filename);
-    }
 
-    /* Read from the zip, unzip to buffer, and write to disk */
-    if (fout != NULL)
-    {
-        //printf(" extracting: %s\n", write_filename);
-
-        do
+        /* Read from the zip, unzip to buffer, and write to disk */
+        if (fout != NULL)
         {
-            err = unzReadCurrentFile(uf, buf, size_buf);
-            if (err < 0)
+
+            do
             {
-                //printf("error %d with zipfile in unzReadCurrentFile\n", err);
-                pyerr_msg_unz = PyErr_Format(PyExc_Exception, 
-                                    "error %d with zipfile in unzReadCurrentFile", err);
-                break;
+                err = unzReadCurrentFile(uf, buf, size_buf);
+                if (err < 0)
+                {
+                    pyerr_msg_unz = PyErr_Format(PyExc_Exception, 
+                                        "error %d with zipfile in unzReadCurrentFile", err);
+                    break;
+                }
+                if (err>0)
+                    if (fwrite(buf, err, 1, fout) != 1)
+                    {
+                        pyerr_msg_unz = PyErr_Format(PyExc_IOError, "error %d in writing extracted file", errno);
+                        err = UNZ_ERRNO;
+                        break;
+                    }
             }
+            while (err > 0);
+            if (fout)
+                fclose(fout);
+
+            /* Set the time of the file that has been unzipped */
             if (err == 0)
-                break;
-            if (fwrite(buf, err, 1, fout) != 1)
-            {
-                //printf("error %d in writing extracted file\n", errno);
-                pyerr_msg_unz = PyErr_Format(PyExc_IOError, "error %d in writing extracted file", errno);
-                err = UNZ_ERRNO;
-                break;
+                change_file_date(write_filename,file_info.dosDate, file_info.tmu_date);
+        }
+
+        if (err==UNZ_OK)
+        {
+            err = unzCloseCurrentFile(uf);
+            if (err != UNZ_OK) {
+                pyerr_msg_unz = PyErr_Format(PyExc_Exception,
+                                "error %d with zipfile in unzCloseCurrentFile", err);
             }
         }
-        while (err > 0);
-
-        if (fout)
-            fclose(fout);
-
-        /* Set the time of the file that has been unzipped */
-        if (err == 0)
-            change_file_date(write_filename,file_info.dosDate, file_info.tmu_date);
+        else
+            unzCloseCurrentFile(uf);
     }
-
-    errclose = unzCloseCurrentFile(uf);
-    if (errclose != UNZ_OK)
-        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
-                            "error %d with zipfile in unzCloseCurrentFile", errclose);
-        //printf("error %d with zipfile in unzCloseCurrentFile\n", errclose);
 
     free(buf);
     return err;
@@ -304,45 +303,58 @@ int do_extract_currentfile(unzFile uf, int opt_extract_without_path, int* popt_o
 
 int do_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, const char *password)
 {
-    int err = unzGoToFirstFile(uf);
-    if (err != UNZ_OK)
-    {
-        //printf("error %d with zipfile in unzGoToFirstFile\n", err);
+    uLong i;
+    unz_global_info64 gi;
+    int err;
+    
+    err = unzGetGlobalInfo64(uf,&gi);
+    if (err != UNZ_OK) {
         pyerr_msg_unz = PyErr_Format(PyExc_Exception,
-                            "error %d with zipfile in unzGoToFirstFile", err);
+                            "error %d with zipfile in unzGetGlobalInfo", err);
         return 1;
     }
 
-    do
+    for (i=0;i<gi.number_entry;i++)
     {
-        err = do_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password);
-        if (err != UNZ_OK)
-            break;
-        err = unzGoToNextFile(uf);
-    }
-    while (err != UNZ_END_OF_LIST_OF_FILE);
+        err = do_extract_currentfile(uf,&opt_extract_without_path,
+                                          &opt_overwrite,
+                                          password);
+        if (err != UNZ_OK) {
+            pyerr_msg_unz = PyErr_Format(PyExc_Exception,
+                            "error %d with zipfile in do_extract_currentfile", err);
+            return 1;
+        }
 
-    if (err != UNZ_END_OF_LIST_OF_FILE)
-    {
-        //printf("error %d with zipfile in unzGoToNextFile\n", err);
-        pyerr_msg_unz = PyErr_Format(PyExc_Exception,
+        if ((i+1)<gi.number_entry)
+        {
+            err = unzGoToNextFile(uf);
+            if (err != UNZ_OK)
+            {
+                pyerr_msg_unz = PyErr_Format(PyExc_Exception,
                             "error %d with zipfile in unzGoToNextFile", err);
-        return 1;
+                return 1;
+            }
+        }
     }
+
     return 0;
+
 }
 
 int do_extract_onefile(unzFile uf, const char* filename, int opt_extract_without_path, int opt_overwrite, 
     const char* password)
 {
-    if (unzLocateFile(uf, filename, NULL) != UNZ_OK)
+    if (unzLocateFile(uf,filename,CASESENSITIVITY) != UNZ_OK)
     {
-        //printf("file %s not found in the zipfile\n", filename);
         return 2;
     }
-    if (do_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password) == UNZ_OK)
-        return UNZ_OK;
-    return 1;
+
+    if (do_extract_currentfile(uf,&opt_extract_without_path,
+                                      &opt_overwrite,
+                                      password) == UNZ_OK)
+        return 0;
+    else
+        return 1;
 }
 
 /* original usage string for miniunz is:
@@ -387,7 +399,6 @@ int _uncompress(const char* src, const char* password, const char *dirname,
     {
         if (extractdir && CHDIR(dirname))
         {
-            //printf("Error changing into %s, aborting\n", dirname);
             pyerr_msg_unz = PyErr_Format(PyExc_OSError, "error changing into %s", dirname);
         }
 
