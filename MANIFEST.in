@@ -1,12 +1,11 @@
 graft src
-recursive-include zlib123 *.c *.h
-recursive-exclude zlib123 ChangeLog configure FAQ INDEX Makefile* make_vms.com README
-prune zlib123/amiga
-prune zlib123/as400
-prune zlib123/contrib
-prune zlib123/examples
-prune zlib123/msdos
-prune zlib123/old
-prune zlib123/projects
-prune zlib123/qnx
-prune zlib123/win32
+recursive-include zlib-1.2.11 *.c *.h
+recursive-exclude zlib-1.2.11 ChangeLog configure FAQ INDEX Makefile* make_vms.com README
+prune zlib-1.2.11/amiga
+prune zlib-1.2.11/as400
+prune zlib-1.2.11/examples
+prune zlib-1.2.11/msdos
+prune zlib-1.2.11/old
+prune zlib-1.2.11/projects
+prune zlib-1.2.11/qnx
+prune zlib-1.2.11/win32
