@@ -423,7 +423,7 @@ PyObject *py_uncompress(PyObject *self, PyObject *args)
     const char * dir;
 
     if (!PyArg_ParseTuple(args, "z#z#z#i", &src, &src_len, &pass, &pass_len, &dir, &dir_len, &withoutpath)) {
-        return PyErr_Format(PyExc_ValueError, "expected arguments are uncompress(src, pass, dir, withoutpath)");
+        return PyErr_Format(PyExc_ValueError, "expected arguments are uncompress(zipfile, password, dir, extract_withoutpath)");
     }
 
     if (src_len < 1) {

@@ -440,7 +440,7 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
                                 &dst, &dst_len,
                                 &pass, &pass_len,
                                 &level)) {
-        return PyErr_Format(PyExc_ValueError, "expected arguments are compress(src, srcpath, dst, pass, level)");
+        return PyErr_Format(PyExc_ValueError, "expected arguments are compress(srcfile, prefix, zipfile, password, compress_level)");
     }
 
     if (src_len < 1) {
@@ -495,7 +495,7 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 			  &progress_cb_obj)) {
         return PyErr_Format(PyExc_ValueError,
                         "expected arguments are "
-                        "compress_multiple([src], [srcpath], dst, pass, level)");
+                        "compress_multiple(srcfiles, prefixs, zipfile, password, compress_level, progress)");
     }
 
     src_len = PyList_Size(src);
@@ -605,10 +605,46 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 static char ext_doc[] = "C extention for encrypted zip compress/uncompress.\n";
 
 static PyMethodDef py_minizip_methods[] = {
-	{"compress", py_compress, METH_VARARGS, "make compressed file.\n"},
-	{"compress_multiple", py_compress_multiple, METH_VARARGS, "make compressed file with many files.\n"},
-	{"uncompress", py_uncompress, METH_VARARGS, "extract compressed file.\n"},
-	{NULL, NULL, 0, NULL}
+ {
+        "compress",
+        py_compress, METH_VARARGS,
+        "compress(srcfile, prefix, zipfile, password, compress_level)\n"
+        "--\n\n"
+        "make compressed file.\n"
+        "\n"
+        ":param srcfile: path to source file. (str)\n"
+        ":param prefix: prefix path for the file in the zip. (str)\n"
+        ":param zipfile: path of the zip file to be created. (str)\n"
+        ":param password: password of the zip, or None for no-password zip. (str)\n"
+        ":param compress_level: compress level between 1(faster) to 9(more compress). (int)\n"
+    },
+    {
+        "compress_multiple",
+        py_compress_multiple, METH_VARARGS,
+        "compress_multiple(srcfiles, prefixs, zipfile, password, compress_level, progress= None)\n"
+        "--\n\n"
+        "make compressed file with many files.\n"
+        "\n"
+        ":param srcfiles: list of path to source file. (list of str)\n"
+        ":param prefixs: list fo prefix path for the file in the zip, or [] to left them in root directory. (list of str)\n"
+        ":param zipfile: path of the zip file to be created. (str)\n"
+        ":param password: password of the zip, or None for no-password zip. (str)\n"
+        ":param compress_level: compress level between 1(faster) to 9(more compress). (int)\n"
+        ":param progress: function to be called during processing which takes one argument, the count of how many files have been compressed. (callable)\n"
+    },
+    {
+        "uncompress",
+        py_uncompress, METH_VARARGS,
+        "uncompress(zipfile, password, dir, extract_withoutpath)\n"
+        "--\n\n"
+        "extract compressed file.\n"
+        "\n"
+        ":param zipfile: path of the zip file to be extracted. (str)\n"
+        ":param password: password of the zip, or None for no-password zip. (str)\n"
+        ":param dir: path to extract files, or None to extract in CWD. (str)\n"
+        ":param extract_withoutpath: extract file without path; 0 = use path in the zip, otherwise all files would be placed in the targeted directory. (int)\n"
+    },
+    {NULL, NULL, 0, NULL}
 };
 
 #if PY_MAJOR_VERSION >= 3
