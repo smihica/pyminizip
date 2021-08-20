@@ -319,8 +319,14 @@ int _compress(const char** srcs, int src_num, const char** srcspath, int srcpath
                         slash = &default_slash;
                     }
                 }
-                if (savefilepathnameinzip[filepathname_len-1] != *slash)
-                    extra_len = 1;
+
+                /* NOTE:
+                    don't add slash if filepathname_len is zero (prefix is an empty string)
+                    and avoid memory access violation */
+                if (filepathname_len > 0) {
+                    if (savefilepathnameinzip[filepathname_len-1] != *slash)
+                        extra_len = 1;
+                }
                 /* allocate buffer */
                 fullpathfileinzip = (char *)malloc(filename_len + filepathname_len + extra_len + 1);
                 if (fullpathfileinzip == NULL) {
