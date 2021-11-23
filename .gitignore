@@ -2,6 +2,7 @@ build/
 dist/
 memo/
 MANIFEST
+pyminizip.egg-info
 */**/*.so
 */**/*.o
 */**/\#*

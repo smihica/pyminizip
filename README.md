@@ -1,3 +1,5 @@
+## pyminizip
+
 To create a password encrypted zip file in python.
 And the zip file is able to extract in WINDOWS.
 
@@ -7,23 +9,27 @@ This is a simple Minizip wrapper of python.
 This software uses zlib.
 License: zlib/libpng License.
 
-install zlib
+## Install
+```
+$ pip install pyminizip
+```
 
-    linux:
-    $ sudo apt-get install zlib
-    mac:
-    $ sudo port install zlib
+## Install zlib
+```
+# linux
+$ sudo apt-get install zlib
+# mac
+$ xcode-select --install
+$ brew install zlib
+```
 
-install pyminizip
+## How to use
 
-    $ pip install pyminizip
+This package just provides three functions.
 
-----------------------------------------------------------------------------
-
-Provides three functions.
-==============================
-
+```
 pyminizip.compress("/srcfile/path.txt", "file_path_prefix", "/distfile/path.zip", "password", int(compress_level))
+```
 
   Args:
   1. src file path (string)
@@ -35,7 +41,10 @@ pyminizip.compress("/srcfile/path.txt", "file_path_prefix", "/distfile/path.zip"
   Return value:
   - always returns None
 
+```
 pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], [u'/path_for_file1', u'/path_for_file2'], "file.zip", "1233", 4, progress)
+```
+
   Args:
   1. src file LIST path (list)
   2. src file LIST prefix path (list) or []
@@ -47,7 +56,11 @@ pyminizip.compress_multiple([u'pyminizip.so', 'file2.txt'], [u'/path_for_file1',
   Return value:
   - always returns None
 
+```
 pyminizip.uncompress("/srcfile/path.zip", "password", "/dirtoextract", int(withoutpath))
+```
+
+  Args:
   1. src file path (string)
   2. password (string) or None (to unzip encrypted archives)
   3. dir path to extract files or None (to extract in a specific dir or cwd)
@@ -55,6 +68,3 @@ pyminizip.uncompress("/srcfile/path.zip", "password", "/dirtoextract", int(witho
 
   Return value:
   - always returns None
-
-
-==============================

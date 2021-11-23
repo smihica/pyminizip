@@ -42,5 +42,6 @@ setup(
                   include_dirs=['src','zlib-1.2.11','zlib-1.2.11/contrib/minizip'],
                   )
         ],
-    long_description = read('README.txt'),
+    long_description = read('README.md'),
+    long_description_content_type = 'text/markdown',
 )
