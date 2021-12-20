@@ -14,6 +14,7 @@
    Copyright (C) 2009-2010 Mathias Svensson ( http://result42.com )
 */
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "bytesobject.h"
 
@@ -417,7 +418,8 @@ int _uncompress(const char* src, const char* password, const char *dirname,
 
 PyObject *py_uncompress(PyObject *self, PyObject *args)
 {
-    int src_len, pass_len, dir_len, withoutpath, res;
+    Py_ssize_t src_len, pass_len, dir_len;
+    int withoutpath, res;
     const char * src;
     const char * pass;
     const char * dir;

@@ -14,6 +14,7 @@
   Copyright (C) 2009-2010 Mathias Svensson ( http://result42.com )
 */
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "bytesobject.h"
 
@@ -434,7 +435,8 @@ int _compress(const char** srcs, int src_num, const char** srcspath, int srcpath
 
 static PyObject *py_compress(PyObject *self, PyObject *args)
 {
-    int src_len, srcpath_len, dst_len, pass_len, level, res;
+    Py_ssize_t src_len, srcpath_len, dst_len, pass_len;
+    int level, res;
     const char * src;
     const char * srcpath;
     const char * dst;
@@ -481,7 +483,8 @@ static PyObject *py_compress(PyObject *self, PyObject *args)
 static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
 {
     int i;
-    int src_len, srcpath_len, dst_len, pass_len, level, res;
+    int src_len, srcpath_len, level, res;
+    Py_ssize_t dst_len, pass_len;
     PyObject * src, * srcpath;
     char ** srcs, ** srcspath = NULL;
     const char * dst;
