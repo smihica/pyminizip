@@ -534,8 +534,8 @@ static PyObject *py_compress_multiple(PyObject *self, PyObject *args)
     }
 
     if (progress_cb_obj != NULL) {
-        if (!PyFunction_Check(progress_cb_obj)) {
-            return PyErr_Format(PyExc_ValueError, "progress must be function or None");
+        if (!PyCallable_Check(progress_cb_obj)) {
+            return PyErr_Format(PyExc_ValueError, "progress must be callable or None");
         }
     }
 
